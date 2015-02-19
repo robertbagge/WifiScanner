@@ -27,7 +27,9 @@ import com.opencsv.CSVWriter;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 
@@ -36,7 +38,8 @@ public class MainActivity extends Activity {
 
     private final static String MENU_ACTION_SEARCH_MESSAGE = "Search not implemented";
     private final static String MENU_ACTION_SCAN_MESSAGE = "Scan not implemented";
-    private final static String MENU_ACTION_SAVE_MESSAGE = "Save not implemented";
+    private final static String MENU_ACTION_SAVE_MESSAGE = "Save completed";
+    private final static String MENU_ACTION_SAVE_FAILED_MESSAGE = "No WiFis to save";
     private final static String MENU_ACTION_SETTINGS_MESSAGE = "Settings not implemented";
 
     private Context context;
@@ -128,21 +131,30 @@ public class MainActivity extends Activity {
     }
 
     private void saveResults(){
-        String csv = android.os.Environment.getExternalStorageDirectory().getAbsolutePath() + "/test/test.csv";
-        CSVWriter writer = null;
-        try {
-            writer = new CSVWriter(new FileWriter(csv), ',');
-            List<String[]> data = new ArrayList<String[]>();
-            data.add(new String[] {"India", "New Delhi"});
-            data.add(new String[] {"United States", "Washington D.C"});
-            data.add(new String[] {"Germany", "Berlin"});
-            writer.writeAll(data);
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        if(wifiScanList != null){
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy_dd_MM_HH_mm_ss");
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTimeInMillis(scanStarted);
+            String timestamp = sdf.format(calendar.getTime());
+            String csv = android.os.Environment.getExternalStorageDirectory().getAbsolutePath() + "/WifiScanner/" + timestamp + "_snap.csv";
+            CSVWriter writer = null;
+            try {
+                writer = new CSVWriter(new FileWriter(csv), ',');
+                List<String[]> data = new ArrayList<String[]>();
+                ScanResult row = null;
+                for(int i = 0; i < wifiScanList.size(); i++){
+                    row = wifiScanList.get(i);
+                    data.add(new String[] {row.BSSID, row.SSID, String.valueOf(convertFrequencyToChannel(row.frequency)), String.valueOf(row.level)});
+                }
+                writer.writeAll(data);
+                writer.close();
+                Toast.makeText(context, MENU_ACTION_SAVE_MESSAGE, Toast.LENGTH_SHORT).show();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }else{
+            Toast.makeText(context, MENU_ACTION_SAVE_FAILED_MESSAGE, Toast.LENGTH_SHORT).show();
         }
-        Log.d(TAG, csv);
-        Toast.makeText(context, MENU_ACTION_SAVE_MESSAGE, Toast.LENGTH_SHORT).show();
     }
 
     private void startNewScan(){
@@ -153,6 +165,17 @@ public class MainActivity extends Activity {
         linlaHeaderProgress.setVisibility(View.VISIBLE);
         list.setVisibility(View.GONE);
     }
+
+    private static int convertFrequencyToChannel(int freq) {
+        if (freq >= 2412 && freq <= 2484) {
+            return (freq - 2412) / 5 + 1;
+        } else if (freq >= 5170 && freq <= 5825) {
+            return (freq - 5170) / 5 + 34;
+        } else {
+            return -1;
+        }
+    }
+
 
     private class ScanResultsAdapter extends ArrayAdapter<ScanResult> {
         public ScanResultsAdapter(Context context, List<ScanResult> scanResults) {
