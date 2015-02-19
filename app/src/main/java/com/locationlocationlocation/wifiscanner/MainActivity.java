@@ -18,6 +18,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -45,6 +46,7 @@ public class MainActivity extends Activity {
     ListView list;
     List<ScanResult> wifiScanList;
     long scanStarted;
+    LinearLayout linlaHeaderProgress;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,7 +57,7 @@ public class MainActivity extends Activity {
         list = (ListView)findViewById(R.id.listView1);
         mainWifiObj = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         wifiReciever = new WifiScanReceiver();
-
+        linlaHeaderProgress = (LinearLayout) findViewById(R.id.linlaHeaderProgress);
     }
 
     protected void onPause() {
@@ -88,8 +90,11 @@ public class MainActivity extends Activity {
             case R.id.action_save_icon:
                 saveResults();
                 return true;
-            case R.id.action_settings:
-                openSettings();
+            case R.id.action_exit:
+                Intent intent = new Intent(Intent.ACTION_MAIN);
+                intent.addCategory(Intent.CATEGORY_HOME);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
                 return true;
             case R.id.action_save:
                 saveResults();
@@ -105,6 +110,8 @@ public class MainActivity extends Activity {
     class WifiScanReceiver extends BroadcastReceiver {
         @SuppressLint("UseValueOf")
         public void onReceive(Context c, Intent intent) {
+            linlaHeaderProgress.setVisibility(View.GONE);
+            list.setVisibility(View.VISIBLE);
 
             Log.d(TAG, "Scan finished after: " + Long.toString(System.currentTimeMillis() - scanStarted) + "ms");
             wifiScanList = mainWifiObj.getScanResults();
@@ -143,6 +150,8 @@ public class MainActivity extends Activity {
         scanStarted = System.currentTimeMillis();
         wifiScanList = null;
         Log.d(TAG, "Scan started");
+        linlaHeaderProgress.setVisibility(View.VISIBLE);
+        list.setVisibility(View.GONE);
     }
 
     private class ScanResultsAdapter extends ArrayAdapter<ScanResult> {
@@ -162,12 +171,25 @@ public class MainActivity extends Activity {
             TextView tvBSSID = (TextView) convertView.findViewById(R.id.bssid);
             TextView tvSSID = (TextView) convertView.findViewById(R.id.ssid);
             TextView tvRSSI = (TextView) convertView.findViewById(R.id.rssi);
+            TextView tvFrequency = (TextView) convertView.findViewById(R.id.frequency);
 
             // Populate the data into the template view using the data object
             tvBSSID.setText(scanResult.BSSID);
             tvSSID.setText(scanResult.SSID);
             int level = scanResult.level;
             tvRSSI.setText(Integer.toString(level) + " dB");
+
+            int frequency = scanResult.frequency;
+            String frequencyStr = "?? Hz";
+            if(frequency > 2000 && frequency < 3000) {
+                frequencyStr = "2.4 GHz";
+
+            }
+            else if(frequency > 4500 && frequency < 5500){
+                frequencyStr = "5 GHz";
+            }
+            tvFrequency.setText(frequencyStr);
+
 
             if(level > -50){
                 tvRSSI.setTextColor(getResources().getColor(R.color.flat_ui_turqouise));

@@ -14,8 +14,15 @@
 
     <item name="flat_ui_asphalt" type="color">#34495e</item>
     <item name="flat_ui_turqouise" type="color">#1abc9c</item>
+    <item name="flat_ui_turqouise_light" type="color">#75d6c3</item>
     <item name="flat_ui_sun_flower" type="color">#f1c40f</item>
     <item name="flat_ui_pumpkin" type="color">#d35400</item>
+    <item name="flat_ui_concrete" type="color">#95a5a6</item>
+    <item name="flat_ui_amethyst" type="color">#9b59b6</item>
+
+
+
+
 
 
     <integer-array name="androidcolors">
