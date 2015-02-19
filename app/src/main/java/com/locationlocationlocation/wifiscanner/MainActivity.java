@@ -10,16 +10,19 @@ import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -36,7 +39,7 @@ public class MainActivity extends Activity {
     WifiManager mainWifiObj;
     WifiScanReceiver wifiReciever;
     ListView list;
-    String wifis[];
+    List<ScanResult> wifiScanList;
     long scanStarted;
 
     @Override
@@ -48,8 +51,6 @@ public class MainActivity extends Activity {
         list = (ListView)findViewById(R.id.listView1);
         mainWifiObj = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         wifiReciever = new WifiScanReceiver();
-        mainWifiObj.startScan();
-        scanStarted = System.currentTimeMillis();
 
     }
 
@@ -77,8 +78,11 @@ public class MainActivity extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle presses on the action bar items
         switch (item.getItemId()) {
-            case R.id.action_search:
-                openSearch();
+            case R.id.action_play:
+                startNewScan();
+                return true;
+            case R.id.action_save_icon:
+                saveResults();
                 return true;
             case R.id.action_settings:
                 openSettings();
@@ -98,19 +102,9 @@ public class MainActivity extends Activity {
         @SuppressLint("UseValueOf")
         public void onReceive(Context c, Intent intent) {
 
-            Log.d(TAG, "Scan finished in " + Long.toString(System.currentTimeMillis() - scanStarted) + " ms after scan started");
-
-            List<ScanResult> wifiScanList = mainWifiObj.getScanResults();
-            Log.d(TAG, "Obtain results finished in " + Long.toString(System.currentTimeMillis() - scanStarted) + " ms after scan started");
-            wifis = new String[wifiScanList.size()];
-            for(int i = 0; i < wifiScanList.size(); i++){
-                wifis[i] = ((wifiScanList.get(i)).toString());
-            }
-
-            Log.d(TAG, "Parse results finished in " + Long.toString(System.currentTimeMillis() - scanStarted) + " ms after scan started");
-
-            list.setAdapter(new ArrayAdapter<String>(getApplicationContext(),
-                    android.R.layout.simple_list_item_1, wifis));
+            Log.d(TAG, "Scan finished after: " + Long.toString(System.currentTimeMillis() - scanStarted) + "ms");
+            wifiScanList = mainWifiObj.getScanResults();
+            list.setAdapter(new ScanResultsAdapter(context, wifiScanList));
         }
     }
 
@@ -127,6 +121,45 @@ public class MainActivity extends Activity {
     }
 
     private void startNewScan(){
-        Toast.makeText(context, MENU_ACTION_SCAN_MESSAGE, Toast.LENGTH_SHORT).show();
+        mainWifiObj.startScan();
+        scanStarted = System.currentTimeMillis();
+        wifiScanList = null;
+        Log.d(TAG, "Scan started");
+    }
+
+    private class ScanResultsAdapter extends ArrayAdapter<ScanResult> {
+        public ScanResultsAdapter(Context context, List<ScanResult> scanResults) {
+            super(context, 0, scanResults);
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            // Get the data item for this position
+            ScanResult scanResult = getItem(position);
+            // Check if an existing view is being reused, otherwise inflate the view
+            if (convertView == null) {
+                convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_scan_result, parent, false);
+            }
+            // Lookup view for data population
+            TextView tvBSSID = (TextView) convertView.findViewById(R.id.bssid);
+            TextView tvSSID = (TextView) convertView.findViewById(R.id.ssid);
+            TextView tvRSSI = (TextView) convertView.findViewById(R.id.rssi);
+
+            // Populate the data into the template view using the data object
+            tvBSSID.setText(scanResult.BSSID);
+            tvSSID.setText(scanResult.SSID);
+            int level = scanResult.level;
+            tvRSSI.setText(Integer.toString(level) + " dB");
+
+            if(level > -50){
+                tvRSSI.setTextColor(getResources().getColor(R.color.flat_ui_turqouise));
+            }else if(level > -70){
+                tvRSSI.setTextColor(getResources().getColor(R.color.flat_ui_sun_flower));
+            }else{
+                tvRSSI.setTextColor(getResources().getColor(R.color.flat_ui_pumpkin));
+            }
+            // Return the completed view to render on screen
+            return convertView;
+        }
     }
 }
