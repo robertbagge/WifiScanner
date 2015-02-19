@@ -20,6 +20,11 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.opencsv.CSVWriter;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -123,6 +128,20 @@ public class MainActivity extends Activity {
     }
 
     private void saveResults(){
+        String csv = android.os.Environment.getExternalStorageDirectory().getAbsolutePath() + "/test/test.csv";
+        CSVWriter writer = null;
+        try {
+            writer = new CSVWriter(new FileWriter(csv), ',');
+            List<String[]> data = new ArrayList<String[]>();
+            data.add(new String[] {"India", "New Delhi"});
+            data.add(new String[] {"United States", "Washington D.C"});
+            data.add(new String[] {"Germany", "Berlin"});
+            writer.writeAll(data);
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Log.d(TAG, csv);
         Toast.makeText(context, MENU_ACTION_SAVE_MESSAGE, Toast.LENGTH_SHORT).show();
     }
 
