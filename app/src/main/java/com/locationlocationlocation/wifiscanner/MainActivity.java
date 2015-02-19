@@ -9,6 +9,7 @@ import android.content.IntentFilter;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -25,6 +26,7 @@ import android.widget.Toast;
 
 import com.opencsv.CSVWriter;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -136,25 +138,42 @@ public class MainActivity extends Activity {
             Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(scanStarted);
             String timestamp = sdf.format(calendar.getTime());
-            String csv = android.os.Environment.getExternalStorageDirectory().getAbsolutePath() + "/WifiScanner/" + timestamp + "_snap.csv";
-            CSVWriter writer = null;
-            try {
-                writer = new CSVWriter(new FileWriter(csv), ',');
-                List<String[]> data = new ArrayList<String[]>();
-                ScanResult row = null;
-                for(int i = 0; i < wifiScanList.size(); i++){
-                    row = wifiScanList.get(i);
-                    data.add(new String[] {row.BSSID, row.SSID, String.valueOf(convertFrequencyToChannel(row.frequency)), String.valueOf(row.level)});
+
+
+            String folderPath = android.os.Environment.getExternalStorageDirectory().getAbsolutePath() + "/WifiScanner";
+            if(folderExists(folderPath)){
+                String csv = folderPath + "/" + timestamp + "_snap.csv";
+                CSVWriter writer = null;
+                try {
+                    writer = new CSVWriter(new FileWriter(csv), ',');
+                    List<String[]> data = new ArrayList<String[]>();
+                    ScanResult row = null;
+                    for(int i = 0; i < wifiScanList.size(); i++){
+                        row = wifiScanList.get(i);
+                        data.add(new String[] {row.BSSID, row.SSID, String.valueOf(convertFrequencyToChannel(row.frequency)), String.valueOf(row.level)});
+                    }
+                    writer.writeAll(data);
+                    writer.close();
+                    Toast.makeText(context, MENU_ACTION_SAVE_MESSAGE, Toast.LENGTH_SHORT).show();
+                    Log.d(TAG, "Save to path: " + csv);
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-                writer.writeAll(data);
-                writer.close();
-                Toast.makeText(context, MENU_ACTION_SAVE_MESSAGE, Toast.LENGTH_SHORT).show();
-            } catch (IOException e) {
-                e.printStackTrace();
+            }else{
+                Toast.makeText(context, MENU_ACTION_SAVE_FAILED_MESSAGE, Toast.LENGTH_SHORT).show();
             }
         }else{
             Toast.makeText(context, MENU_ACTION_SAVE_FAILED_MESSAGE, Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private boolean folderExists(String folderPath){
+        File folder = new File(folderPath);
+        boolean success = true;
+        if (!folder.exists()) {
+            success = folder.mkdir();
+        }
+        return success;
     }
 
     private void startNewScan(){
