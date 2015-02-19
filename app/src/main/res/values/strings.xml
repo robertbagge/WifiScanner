@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Hello World</string>
+    <string name="app_name">WifiScanner</string>
     <string name="hello_world">Hello world!</string>
     <string name="first_app">First app this time around!</string>
     <string name="edit_message">Enter a message</string>
